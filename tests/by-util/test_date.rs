@@ -2229,12 +2229,37 @@ fn test_date_locale_hu_hungarian() {
         .env("TZ", "UTC")
         .arg("-d")
         .arg("2025-12-14T13:00:00")
-        .arg("+%Y. %b %-e., %A, %H:%M:%S %Z")
         .succeeds();
 
     assert_eq!(
         result.stdout_str(),
-        "2025. dec 14., vasárnap, 13:00:00 UTC\n"
+        "2025. dec. 14., vasárnap, 13:00:00 UTC\n"
+    );
+
+    let stdout = result.stdout_str();
+
+    // Hungarian locale should use 24-hour format (no AM/PM)
+    assert!(
+        !stdout.contains("AM") && !stdout.contains("PM"),
+        "Hungarian locale should use 24-hour format (no AM/PM), got: {stdout}"
+    );
+
+    // Should have 13:00 (not 1:00)
+    assert!(
+        stdout.contains("13:00"),
+        "Hungarian locale should show 13:00 for 1 PM, got: {stdout}"
+    );
+
+    // Timezone should be included (our implementation adds %Z if missing)
+    assert!(
+        stdout.contains("UTC") || stdout.contains("+00") || stdout.contains('Z'),
+        "Output should include timezone information, got: {stdout}"
+    );
+
+    // Check proper formatting (no double dots, day name, etc.) of entire output
+    assert!(
+        stdout == format!("2025. dec. 14., vasárnap, 13:00:00 UTC\n"),
+        "Incorrect Hungarian output format, got: {stdout}"
     );
 }
 
